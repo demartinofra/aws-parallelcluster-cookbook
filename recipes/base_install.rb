@@ -166,6 +166,13 @@ elsif node['platform'] == 'ubuntu' && node['platform_version'] == "14.04"
   python_package 'paramiko' do
     version '2.4.2'
   end
+  python_package 'future' do
+    version '0.17.1'
+  end
+  python_package 'retrying' do
+    version '1.3.3'
+    install_options '--ignore-installed six'
+  end
 else
   python_package "aws-parallelcluster-node" do
     version node['cfncluster']['cfncluster-node-version']
