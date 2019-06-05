@@ -53,8 +53,8 @@ template '/etc/parallelcluster/parallelcluster_supervisord.conf' do
   mode '0644'
 end
 
-# Only run FSx on centos for now
-if node['platform'] == 'centos' or node['platform'] == 'amazon'
-  # Mount FSx
-  include_recipe 'aws-parallelcluster::fsx_mount'
-end
+# Mount EFS directory with efs_mount recipe
+include_recipe 'aws-parallelcluster::efs_mount'
+
+# Mount FSx directory with fsx_mount recipe
+include_recipe 'aws-parallelcluster::fsx_mount'
