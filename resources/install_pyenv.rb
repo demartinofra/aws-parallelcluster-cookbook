@@ -1,5 +1,5 @@
-resource_name :pyenv_install
-provides :pyenv_install
+resource_name :install_pyenv
+provides :install_pyenv
 
 property :pyenv_user, String, name_property: true
 property :python_version, String, required: true

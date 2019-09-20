@@ -24,7 +24,7 @@ end
 
 def install_ext_auth_virtual_env
   unless File.exist?("#{node['cfncluster']['dcv_ext_auth_virtualenv_path']}/bin/activate")
-    pyenv_install node['cfncluster']['dcv']['ext_auth_user'] do
+    install_pyenv node['cfncluster']['dcv']['ext_auth_user'] do
       python_version node['cfncluster']['python-version']
     end
 
@@ -61,8 +61,10 @@ if node['platform'] == 'centos' and node['platform_version'].to_i == 7
         end
       end
 
+      # dcv_packages is a list of file names
       dcv_packages = %W(#{node['cfncluster']['dcv']['server']} #{node['cfncluster']['dcv']['xdcv']})
       path = "#{Chef::Config[:file_cache_path]}/nice-dcv-#{node['cfncluster']['dcv']['version']}-el7/"
+      # Rewrite dcv_packages object by cycling each package file name and appending the path to them
       dcv_packages.map! {|x|  path + x}
       install_rpm_packages_from_path(dcv_packages)
 
@@ -74,7 +76,7 @@ if node['platform'] == 'centos' and node['platform_version'].to_i == 7
       user node['cfncluster']['dcv']['ext_auth_user'] do
         manage_home true
         home node['cfncluster']['dcv']['ext_auth_user_home']
-        comment 'Required for DCV'
+        comment 'NICE DCV External Authenticator user'
         system true
         shell '/bin/bash'
       end
@@ -85,7 +87,7 @@ if node['platform'] == 'centos' and node['platform_version'].to_i == 7
       user node['cfncluster']['dcv']['ext_auth_user'] do
         manage_home false
         home node['cfncluster']['dcv']['ext_auth_user_home']
-        comment 'ext auth user'
+        comment 'NICE DCV External Authenticator user'
         system true
         shell '/bin/bash'
       end
