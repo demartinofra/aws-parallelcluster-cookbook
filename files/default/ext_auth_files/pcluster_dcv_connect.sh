@@ -2,7 +2,7 @@
 #
 # Cookbook Name:: aws-parallelcluster
 #
-# Copyright 2013-2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with the
 # License. A copy of the License is located at
@@ -13,14 +13,30 @@
 # OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script must be executed by the user who want to connect to DCV to obtain a Session Token.
+# 
+# It performs the following steps:
+# 1. Asks the ParallelCluster DCV External Authenticator for a Request Token and the Access File name
+# 2. Creates the "access file" in the AUTHORIZATION_FILE_DIR folder (to confirm user identity)
+# 3. Asks the ParallelCluster DCV External Authenticator for a SessionToken (the real token to access to the DCV session)
+# 4. Returns DCV Session Id, DCV Server Port and the Session Token
+
 # Requirements:
 # jq, curl, awk, xargs, shuf, cat, grep, systemctl
 
-# This script takes as input the ParallelCluster shared folder. So for example you should called it like
+# Usage:
+# The script requires the ParallelCluster shared folder as input parameter
+# The ParallelCluster shared folder will be used as session storage folder for DCV.
+# It enables the clients to share files while connected to the session.
 # ./pcluster_dcv_connect.sh "/shared"
 
-# Return the sessionid, the port and the tokenid (256 character long).
+
+# Returns the sessionid, the port and the tokenid (256 character long).
 # Example: mysession 8443 adfsaklcxzvsadkhfgsdkhjfag-__bafbdajshsdjfh
+
+AUTHORIZATION_FILE_DIR="/var/spool/dcv_ext_auth"
+DCV_SESSION_FOLDER="${HOME}/.parallelcluster/dcv"
+
 
 _fail() {
   message=$1
@@ -32,14 +48,15 @@ _check_if_empty() {
   variable=$1
   message=$2
   if [[ -z "${variable}" ]]; then
-    _fail "${message}"
+      _fail "${message}"
   fi
 }
 
-create_dcv_session() {
-    dcv_session_file=$1
-    shared_folder_path=$2
+_create_dcv_session() {
+    dcv_session_file="$1"
+    shared_folder_path="$2"
 
+    # Generate a random session id
     sessionid=$(shuf -zer -n20  {A..Z} {a..z} {0..9})
     echo "${sessionid}" > "${dcv_session_file}"
     dcv create-session --type virtual --storage-root "${shared_folder_path}" "${sessionid}"
@@ -47,44 +64,44 @@ create_dcv_session() {
     echo "${sessionid}"
 }
 
-create_file () {
+_create_file () {
     file="$1"
     permissions="$2"
+
     touch "${file}"
     chmod "${permissions}" "${file}"
 }
 
 main() {
     if [[ -z "$1" ]]; then
-      _fail "Required shared folder"
+        _fail "The script requires the shared folder as input parameter"
     fi
 
-    shared_folder_path=$1
+    shared_folder_path="$1"
     user=$(whoami)
     os=$(< /tmp/dna.json jq -r .cfncluster.cfn_base_os)
 
     if [[ ${os} != "centos7" ]]; then
-      _fail "Non supported OS"
+        _fail "Non supported OS"
     fi
 
     if ! systemctl is-active --quiet dcvserver; then
         _fail "NICE DCV is not active on the given instance"
     fi
 
-    dcv_session_folder="${HOME}/.parallelcluster/dcv"
-    mkdir -p "${dcv_session_folder}"
-
-    dcv_session_file="${dcv_session_folder}/dcv_session"
+    # Create a session with session storage enabled.
+    mkdir -p "${DCV_SESSION_FOLDER}"
+    dcv_session_file="${DCV_SESSION_FOLDER}/dcv_session"
     if [[ ! -e ${dcv_session_file} ]]; then
-        sessionid=$(create_dcv_session "${dcv_session_file}" "${shared_folder_path}")
+        sessionid=$(_create_dcv_session "${dcv_session_file}" "${shared_folder_path}")
     else
         sessionid=$(cat "${dcv_session_file}")
 
         # number of session can either be 0 or 1
         number_of_sessions=$(dcv list-sessions |& grep "${user}" | grep -c "${sessionid}")
         if (( number_of_sessions == 0 )); then
-            # The system has been rebooted
-            sessionid=$(create_dcv_session "${dcv_session_file}" "${shared_folder_path}")
+            # There is no running session (e.g. the system has been rebooted)
+            sessionid=$(_create_dcv_session "${dcv_session_file}" "${shared_folder_path}")
         fi
     fi
 
@@ -92,18 +109,19 @@ main() {
     dcv_server_port=$(grep web-port= /etc/dcv/dcv.conf| awk -F'=' '{ print $2 }' | xargs)
     ext_auth_port=$((dcv_server_port + 1))
 
+    # Retrieve Request Token and Access File name
     user_token_request=$(curl --retry 3 --max-time 5 -s -k -X GET -G "https://localhost:${ext_auth_port}" -d action=requestToken -d authUser="${user}" -d sessionID="${sessionid}")
-    _check_if_empty "${user_token_request}" "Unable to obtain the User Token from the NICE DCV external authenticator"
-
+    _check_if_empty "${user_token_request}" "Unable to obtain the Request Token from the NICE DCV external authenticator"
     filename=$(echo "${user_token_request}" | jq -r .requiredFile)
     request_token=$(echo "${user_token_request}" | jq -r .requestToken)
 
-    # This is for the external authenticator to be sure you declared yourself as who you really are
-    create_file "/var/spool/dcv_ext_auth/${filename}" 644
+    # Create the "access file" in the AUTHORIZATION_FILE_DIR
+    # This is used by the external authenticator to verify the user declares himself as who he really is
+    _create_file "${AUTHORIZATION_FILE_DIR}/${filename}" 644
 
+    # Retrieve Session Token
     session_token_request=$(curl --retry 3 --max-time 5 -s -k -X GET -G "https://localhost:${ext_auth_port}" -d action=sessionToken -d requestToken="${request_token}")
     _check_if_empty "${session_token_request}" "Unable to obtain the Session Token from the NICE DCV external authenticator"
-
     session_token=$(echo "${session_token_request}" | jq -r .sessionToken)
 
     if [[ -z "${dcv_server_port}" ]]; then

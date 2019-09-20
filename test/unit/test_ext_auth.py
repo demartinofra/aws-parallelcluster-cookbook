@@ -1,18 +1,14 @@
 import json
-from datetime import datetime
 
 import pytest
-
+import time
 from assertpy import assert_that
-from pcluster_dcv_ext_auth.pcluster_dcv_ext_auth import (
-    DCVAuthenticator,
-    OneTimeTokenHandler,
-    generate_random_token,
-    generate_sha512_hash,
-)
+from datetime import datetime
 
-MAIN = "pcluster_dcv_ext_auth.pcluster_dcv_ext_auth."
-EXT_AUTH = MAIN + "DCVAuthenticator."
+from pcluster_dcv_ext_auth import DCVAuthenticator, OneTimeTokenHandler, generate_random_token, generate_sha512_hash
+
+AUTH_MODULE_MOCK_PATH = "pcluster_dcv_ext_auth."
+AUTH_CLASS_MOCK_PATH = AUTH_MODULE_MOCK_PATH + "DCVAuthenticator."
 
 
 class TestOneTimeTokenHandler:
@@ -24,28 +20,28 @@ class TestOneTimeTokenHandler:
     @staticmethod
     def test_fixed_length():
         storage = OneTimeTokenHandler(3)
-        storage.add_token("caso", ("patata", 1, 15.2, ["a", 2]))
-        storage.add_token("as", (1, 2))
-        storage.add_token("cappa", 5)
+        storage.add_token("token1", ("some_value", 1, 15.2, ["a", 2]))
+        storage.add_token("token2", (1, 2))
+        storage.add_token("token3", 5)
         storage.add_token("1", 15)
-        assert_that(storage.get_token_value("caso")).is_none()
+        assert_that(storage.get_token_info("token1")).is_none()
 
     @staticmethod
     def test_correct_storage():
         storage = OneTimeTokenHandler(3)
-        storage.add_token("caso", ("patata", 1, 15.2, ["a", 2]))
-        storage.add_token("as", (1, 2))
-        storage.add_token("cappa", 5)
-        assert_that(storage.get_token_value("caso")).is_equal_to(("patata", 1, 15.2, ["a", 2]))
-        assert_that(storage.get_token_value("as")).is_equal_to((1, 2))
-        assert_that(storage.get_token_value("cappa")).is_equal_to(5)
+        storage.add_token("token1", ("some_value", 1, 15.2, ["a", 2]))
+        storage.add_token("token2", (1, 2))
+        storage.add_token("token3", 5)
+        assert_that(storage.get_token_info("token1")).is_equal_to(("some_value", 1, 15.2, ["a", 2]))
+        assert_that(storage.get_token_info("token2")).is_equal_to((1, 2))
+        assert_that(storage.get_token_info("token3")).is_equal_to(5)
 
     @staticmethod
     def test_token_remove():
         storage = OneTimeTokenHandler(5)
-        storage.add_token(1, "cascata")
-        storage.get_token_value(1)
-        assert_that(storage.get_token_value(1)).is_none()
+        storage.add_token(1, "some_value")
+        storage.get_token_info(1)
+        assert_that(storage.get_token_info(1)).is_none()
 
 
 def test_one_time_token_handler():
@@ -58,38 +54,36 @@ def test_token_generator():
 
 
 def test_sha_generator():
-    assert_that(generate_sha512_hash("cavolo", "luca", 15)).is_equal_to(generate_sha512_hash("cavolo", "luca", 15))
-    assert_that(generate_sha512_hash("flower")).is_equal_to(generate_sha512_hash("flower"))
-    assert_that(generate_sha512_hash([1, 2, 4])).is_equal_to(generate_sha512_hash([1, 2, 4]))
-
-
-def _create_row(user, command, session_id):
-    return (
-        "{USER}                63   0.0  0.0  4348844   3108   ??  Ss   23Jul19   2:32.46 {COMMAND} "
-        "--session-id {SESSION}".format(USER=user, COMMAND=command, SESSION=session_id)
-    )
+    assert_that(generate_sha512_hash("hash")).is_not_equal_to(generate_sha512_hash("hash"))
+    assert_that(generate_sha512_hash("hash1", "hash2")).is_not_equal_to(generate_sha512_hash("hash1", "hash2"))
+    assert_that(generate_sha512_hash([1, 2, 4])).is_not_equal_to(generate_sha512_hash([1, 2, 4]))
 
 
 @pytest.mark.parametrize(
     "user, command, session_id, result",
     [
-        ("luca", "/usr/libexec/dcv/dcvagent", "mysession", True),
-        ("luca", "/usr/libexec/dcv/dcvagent2", "mysession", False),
+        ("user1", "/usr/libexec/dcv/dcvagent", "mysession", True),
+        ("user1", "/usr/libexec/dcv/dcvagent2", "mysession", False),
         ("wrong", "/usr/libexec/dcv/dcvagent", "mysession", False),
-        ("luca", "/usr/libexec/dcv/dcvagent", "wrong", False),
+        ("user1", "/usr/libexec/dcv/dcvagent", "wrong", False),
     ],
 )
 def test_is_process_valid(user, command, session_id, result):
     expected_session_id = "mysession"
-    expected_user = "luca"
+    expected_user = "user1"
+
+    ps_aux_output = (
+        "{USER}                63   0.0  0.0  4348844   3108   ??  Ss   23Jul19   2:32.46 {COMMAND} "
+        "--session-id {SESSION}".format(USER=user, COMMAND=command, SESSION=session_id)
+    )
 
     assert_that(
-        DCVAuthenticator.is_process_valid(_create_row(user, command, session_id), expected_user, expected_session_id)
+        DCVAuthenticator.is_process_valid(ps_aux_output, expected_user, expected_session_id)
     ).is_equal_to(result)
 
 
 def mock_generate_random_token(mocker, value):
-    mocker.patch(MAIN + "generate_random_token", return_value=value)
+    mocker.patch(AUTH_MODULE_MOCK_PATH + "generate_random_token", return_value=value)
 
 
 def mock_verify_session_existence(mocker, exists):
@@ -97,7 +91,7 @@ def mock_verify_session_existence(mocker, exists):
         if not exists:
             raise DCVAuthenticator.IncorrectRequestException("The given session for the user does not exists")
 
-    mocker.patch(EXT_AUTH + "_verify_session_existence", side_effect=_return_value)
+    mocker.patch(AUTH_CLASS_MOCK_PATH + "_verify_session_existence", side_effect=_return_value)
 
 
 def mock_os(mocker, user, timestamp):
@@ -111,9 +105,9 @@ def mock_os(mocker, user, timestamp):
     file_property.pw_name = user
     file_property.st_mode = 0
 
-    mocker.patch(MAIN + "os.stat", return_value=file_property, autospec=True)
-    mocker.patch(MAIN + "os.remove")
-    mocker.patch(MAIN + "getpwuid", autospec=True, return_value=file_property)
+    mocker.patch(AUTH_MODULE_MOCK_PATH + "os.stat", return_value=file_property, autospec=True)
+    mocker.patch(AUTH_MODULE_MOCK_PATH + "os.remove")
+    mocker.patch(AUTH_MODULE_MOCK_PATH + "getpwuid", autospec=True, return_value=file_property)
 
 
 @pytest.mark.parametrize(
@@ -122,16 +116,16 @@ def mock_os(mocker, user, timestamp):
         ({"a": "5", "b": "2"}, ["authUser", "sessionID"], DCVAuthenticator.IncorrectRequestException),
         ({"authUser": "5", "b": "2"}, ["authUser", "sessionID"], DCVAuthenticator.IncorrectRequestException),
         ({"a": "5", "sessionID": "2"}, ["authUser", "sessionID"], DCVAuthenticator.IncorrectRequestException),
-        ({"authUser": "luca", "sessionID": "1234"}, ["authUser", "sessionID"], ["luca", "1234"]),
-        ({"requestToken": "ciao"}, ["requestToken"], ["ciao"]),
+        ({"authUser": "user1", "sessionID": "1234"}, ["authUser", "sessionID"], ["user1", "1234"]),
+        ({"requestToken": "token1"}, ["requestToken"], ["token1"]),
     ],
 )
 def test_get_request_token_parameter(parameters, keys, result):
     if isinstance(result, list):
-        assert_that(DCVAuthenticator._get_values_from_parameters(parameters, keys)).is_equal_to(result)
+        assert_that(DCVAuthenticator._extract_parameters_values(parameters, keys)).is_equal_to(result)
     else:
         with pytest.raises(result):
-            DCVAuthenticator._get_values_from_parameters(parameters, keys)
+            DCVAuthenticator._extract_parameters_values(parameters, keys)
 
 
 def test_get_request_token(mocker):
@@ -141,13 +135,15 @@ def test_get_request_token(mocker):
 
     mock_verify_session_existence(mocker, exists=True)
     mock_generate_random_token(mocker, token_value)
+
     # all correct
     assert_that(DCVAuthenticator._get_request_token(user, session_id)).is_equal_to(
         json.dumps({"requestToken": token_value, "requiredFile": generate_sha512_hash(token_value)})
     )
-    assert_that(DCVAuthenticator._request_token_manager.get_token_value(token_value)[:-1]).is_equal_to(
+    assert_that(DCVAuthenticator.request_token_manager.get_token_info(token_value)[:-2]).is_equal_to(
         (user, session_id)
     )
+
     # session does not exists
     mock_verify_session_existence(mocker, exists=False)
     with pytest.raises(DCVAuthenticator.IncorrectRequestException):
@@ -183,25 +179,29 @@ def test_check_auth(mocker):
     user = "centos"
     session_id = "mysession"
     mock_verify_session_existence(mocker, exists=True)
-    # it's valid
-    DCVAuthenticator._session_token_manager.add_token(
-        token, DCVAuthenticator.DCVAuthTokenValues(user, session_id, datetime.utcnow())
+    # valid
+    DCVAuthenticator.session_token_manager.add_token(
+        token, DCVAuthenticator.SessionTokenInfo(user, session_id, datetime.utcnow())
     )
     assert_that(DCVAuthenticator._check_auth(session_id, token)).is_equal_to(user)
-    # it's expired
-    DCVAuthenticator._session_token_manager.add_token(
+
+    # expired
+    DCVAuthenticator.session_token_manager.add_token(
         token,
-        DCVAuthenticator.DCVAuthTokenValues(user, session_id, datetime.utcnow() - DCVAuthenticator._session_token_ttl),
+        DCVAuthenticator.SessionTokenInfo(user, session_id, datetime.utcnow() - DCVAuthenticator.session_token_ttl),
     )
+    time.sleep(1)
     assert_that(DCVAuthenticator._check_auth(session_id, token)).is_none()
+
     # wrong session
-    DCVAuthenticator._session_token_manager.add_token(
-        token, DCVAuthenticator.DCVAuthTokenValues(user, session_id, datetime.utcnow())
+    DCVAuthenticator.session_token_manager.add_token(
+        token, DCVAuthenticator.SessionTokenInfo(user, session_id, datetime.utcnow())
     )
     assert_that(DCVAuthenticator._check_auth("mysession2", token)).is_none()
+
     # non existing path
-    DCVAuthenticator._session_token_manager.add_token(
-        token, DCVAuthenticator.DCVAuthTokenValues(user, session_id, datetime.utcnow())
+    DCVAuthenticator.session_token_manager.add_token(
+        token, DCVAuthenticator.SessionTokenInfo(user, session_id, datetime.utcnow())
     )
     assert_that(DCVAuthenticator._check_auth("mysession2", token)).is_none()
 
@@ -212,51 +212,60 @@ def obtain_timestamp(date):
 
 
 def test_get_session_token(mocker):
-    request_token = "".join(("a" for _ in range(256)))
+    request_token = "".join("a" for _ in range(256))
     user = "centos"
     session_id = "mysession"
+    access_file = "access_file"
     mock_verify_session_existence(mocker, exists=True)
-    # it's empty
+
+    # empty
     with pytest.raises(DCVAuthenticator.IncorrectRequestException):
         DCVAuthenticator._get_session_token(request_token)
-    # it's expired
-    DCVAuthenticator._request_token_manager.add_token(
+
+    # expired
+    DCVAuthenticator.request_token_manager.add_token(
         request_token,
-        DCVAuthenticator.DCVAuthTokenValues(user, session_id, datetime.utcnow() - DCVAuthenticator._request_token_ttl),
+        DCVAuthenticator.RequestTokenInfo(
+            user, session_id, datetime.utcnow() - DCVAuthenticator.request_token_ttl, access_file
+        ),
     )
     with pytest.raises(DCVAuthenticator.IncorrectRequestException):
         DCVAuthenticator._get_session_token(request_token)
+
     # file does not exist
-    DCVAuthenticator._request_token_manager.add_token(
-        request_token, DCVAuthenticator.DCVAuthTokenValues(user, session_id, datetime.utcnow())
+    DCVAuthenticator.request_token_manager.add_token(
+        request_token, DCVAuthenticator.RequestTokenInfo(user, session_id, datetime.utcnow(), access_file)
     )
     with pytest.raises(DCVAuthenticator.IncorrectRequestException):
         DCVAuthenticator._get_session_token(request_token)
+
     # user is different
     mock_os(mocker, "centos2", obtain_timestamp(datetime.utcnow()))
-    DCVAuthenticator._request_token_manager.add_token(
-        request_token, DCVAuthenticator.DCVAuthTokenValues(user, session_id, datetime.utcnow())
+    DCVAuthenticator.request_token_manager.add_token(
+        request_token, DCVAuthenticator.RequestTokenInfo(user, session_id, datetime.utcnow(), access_file)
     )
     with pytest.raises(DCVAuthenticator.IncorrectRequestException):
         DCVAuthenticator._get_session_token(request_token)
+
     # file is expired
-    mock_os(mocker, user, obtain_timestamp(datetime.utcnow() - DCVAuthenticator._request_token_ttl))
-    DCVAuthenticator._request_token_manager.add_token(
-        request_token, DCVAuthenticator.DCVAuthTokenValues(user, session_id, datetime.utcnow())
+    mock_os(mocker, user, obtain_timestamp(datetime.utcnow() - DCVAuthenticator.request_token_ttl))
+    DCVAuthenticator.request_token_manager.add_token(
+        request_token, DCVAuthenticator.RequestTokenInfo(user, session_id, datetime.utcnow(), access_file)
     )
     with pytest.raises(DCVAuthenticator.IncorrectRequestException):
         DCVAuthenticator._get_session_token(request_token)
+
     # working
     mock_os(mocker, user, obtain_timestamp(datetime.utcnow()))
     mock_verify_session_existence(mocker, exists=True)
     session_token = "1234"
     mock_generate_random_token(mocker, session_token)
-    DCVAuthenticator._request_token_manager.add_token(
-        request_token, DCVAuthenticator.DCVAuthTokenValues(user, session_id, datetime.utcnow())
+    DCVAuthenticator.request_token_manager.add_token(
+        request_token, DCVAuthenticator.RequestTokenInfo(user, session_id, datetime.utcnow(), access_file)
     )
     assert_that(DCVAuthenticator._get_session_token(request_token)).is_equal_to(
         json.dumps({"sessionToken": session_token})
     )
-    assert_that(DCVAuthenticator._session_token_manager.get_token_value(session_token)[:-1]).is_equal_to(
+    assert_that(DCVAuthenticator.session_token_manager.get_token_info(session_token)[:-1]).is_equal_to(
         (user, session_id)
     )
