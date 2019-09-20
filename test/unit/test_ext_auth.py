@@ -138,7 +138,7 @@ def test_get_request_token(mocker):
 
     # all correct
     assert_that(DCVAuthenticator._get_request_token(user, session_id)).is_equal_to(
-        json.dumps({"requestToken": token_value, "requiredFile": generate_sha512_hash(token_value)})
+        json.dumps({"requestToken": token_value, "accessFile": generate_sha512_hash(token_value)})
     )
     assert_that(DCVAuthenticator.request_token_manager.get_token_info(token_value)[:-2]).is_equal_to(
         (user, session_id)

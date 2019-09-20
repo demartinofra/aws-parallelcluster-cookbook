@@ -112,12 +112,12 @@ main() {
     # Retrieve Request Token and Access File name
     user_token_request=$(curl --retry 3 --max-time 5 -s -k -X GET -G "https://localhost:${ext_auth_port}" -d action=requestToken -d authUser="${user}" -d sessionID="${sessionid}")
     _check_if_empty "${user_token_request}" "Unable to obtain the Request Token from the NICE DCV external authenticator"
-    filename=$(echo "${user_token_request}" | jq -r .requiredFile)
     request_token=$(echo "${user_token_request}" | jq -r .requestToken)
+    access_file=$(echo "${user_token_request}" | jq -r .accessFile)
 
-    # Create the "access file" in the AUTHORIZATION_FILE_DIR
+    # Create the access file in the AUTHORIZATION_FILE_DIR
     # This is used by the external authenticator to verify the user declares himself as who he really is
-    _create_file "${AUTHORIZATION_FILE_DIR}/${filename}" 644
+    _create_file "${AUTHORIZATION_FILE_DIR}/${access_file}" 644
 
     # Retrieve Session Token
     session_token_request=$(curl --retry 3 --max-time 5 -s -k -X GET -G "https://localhost:${ext_auth_port}" -d action=sessionToken -d requestToken="${request_token}")

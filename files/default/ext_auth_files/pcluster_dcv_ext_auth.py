@@ -82,15 +82,15 @@ class DCVAuthenticator(BaseHTTPRequestHandler):
     1. Obtain a Request Token:
     - an user declares himself and asks for a Request Token for a given DCV Session:
         - curl -X GET -G http://localhost:<port> -d action=requestToken -d authUser=<username> -d sessionID=<ID>
-    - the authenticator will return a json containing requestToken and requiredFile values:
+    - the authenticator will return a json containing requestToken and accessFile values:
         - the requestToken must be used as parameter for the Session Token request
-        - the requiredFile is used to verify the user identity in the Session Token request
+        - the accessFile is used to verify the user identity in the Session Token request
 
     2. Obtain a DCV Session Token:
-    - the user must create an "access file" in the AUTHORIZATION_FILE_DIR, named as the retrieved requiredFile value
+    - the user must create an "access file" in the AUTHORIZATION_FILE_DIR, named as the retrieved accessFile value
     - the user asks for a SessionToken (the real token to access to the DCV session)
         - curl -X GET -G http://localhost:<port> -d action=sessionToken -d requestToken=<tr>
-    - the authenticator verifies the owner of the "access_file", the validity of the requestToken and returns
+    - the authenticator verifies the owner of the access file, the validity of the requestToken and returns
       a Session Token
     - the user can use the retrieved Session Token to connect to the DCV session.
 
@@ -259,7 +259,7 @@ class DCVAuthenticator(BaseHTTPRequestHandler):
             request_token, DCVAuthenticator.RequestTokenInfo(user, session_id, datetime.utcnow(), access_file)
         )
 
-        return json.dumps({"requestToken": request_token, "requiredFile": access_file})
+        return json.dumps({"requestToken": request_token, "accessFile": access_file})
 
     @classmethod
     def _get_session_token(cls, request_token):
@@ -287,12 +287,12 @@ class DCVAuthenticator(BaseHTTPRequestHandler):
             access_file_path = "{0}/{1}".format(AUTHORIZATION_FILE_DIR, access_file)
             file_details = os.stat(access_file_path)
             if getpwuid(file_details.st_uid).pw_name != user:
-                raise DCVAuthenticator.IncorrectRequestException("The user is not the one that created the file")
+                raise DCVAuthenticator.IncorrectRequestException("The user is not the one that created the access file")
             if datetime.utcnow() - datetime.utcfromtimestamp(file_details.st_mtime) > cls.request_token_ttl:
-                raise DCVAuthenticator.IncorrectRequestException("The file has expired")
+                raise DCVAuthenticator.IncorrectRequestException("The access file has expired")
             os.remove(access_file_path)
         except OSError:
-            raise DCVAuthenticator.IncorrectRequestException("The file created by the user does not exist")
+            raise DCVAuthenticator.IncorrectRequestException("The access file does not exist")
 
         # create and register internally a session token
         DCVAuthenticator._verify_session_existence(user, session_id)
