@@ -66,12 +66,6 @@ end
 # Manage SSH via Chef
 include_recipe "openssh"
 
-# Disable selinux
-selinux_state "SELinux Disabled" do
-  action :disabled
-  only_if 'which getenforce'
-end
-
 # Install LICENSE README
 cookbook_file 'AWS-ParallelCluster-License-README.txt' do
   path "#{node['cfncluster']['license_dir']}/AWS-ParallelCluster-License-README.txt"
@@ -204,4 +198,10 @@ end
 # Intel Runtime Libraries
 if (node['platform'] == 'centos' && node['platform_version'].to_i >= 7)
   include_recipe "aws-parallelcluster::intel_install"
+end
+
+# Disable selinux
+selinux_state "SELinux Disabled" do
+  action :disabled
+  only_if 'which getenforce'
 end
