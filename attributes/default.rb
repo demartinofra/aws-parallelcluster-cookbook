@@ -91,8 +91,9 @@ default['openssh']['server']['permit_root_login'] = 'forced-commands-only'
 default['openssh']['server']['password_authentication'] = 'no'
 default['openssh']['server']['gssapi_authentication'] = 'yes'
 default['openssh']['server']['gssapi_clean_up_credentials'] = 'yes'
-default['openssh']['server']['x11_forwarding'] = 'yes'
 default['openssh']['server']['subsystem'] = 'sftp /usr/libexec/openssh/sftp-server'
+default['openssh']['server']['ciphers'] = 'aes256-gcm@openssh.com,aes256-ctr,aes256-cbc'
+default['openssh']['server']['m_a_cs'] = 'hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256'
 default['openssh']['client']['gssapi_authentication'] = 'yes'
 
 # ulimit settings
