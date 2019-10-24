@@ -17,13 +17,6 @@
 # This recipe install the prerequisites required to use NICE DCV on a Linux server
 # Source: https://docs.aws.amazon.com/en_us/dcv/latest/adminguide/setting-up-installing-linux-prereq.html
 
-# TODO: Detect if the instance is a GPU instance.
-def graphic_instance?
-  #instance_type = get_instance_type
-  #is_graphic_instance = true if instance_type.start_with?('g2')
-
-  false
-end
 
 # Configure the system to enable NICE DCV to have direct access to the Linux server's GPU and enable GPU sharing.
 def allow_gpu_acceleration
