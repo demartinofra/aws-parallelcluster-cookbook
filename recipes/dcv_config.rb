@@ -100,13 +100,6 @@ if node['platform'] == 'centos' && node['platform_version'].to_i == 7 && node['c
     recursive true
   end
 
-  # Create ParallelCluster log folder
-  directory '/var/log/parallelcluster/' do
-    owner 'root'
-    mode '1777'
-    recursive true
-  end
-
   # Install DCV external authenticator
   cookbook_file "#{node['cfncluster']['dcv']['authenticator']['user_home']}/pcluster_dcv_authenticator.py" do
     source 'dcv/pcluster_dcv_authenticator.py'
