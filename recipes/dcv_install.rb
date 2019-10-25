@@ -39,13 +39,23 @@ def install_ext_auth_virtual_env
   end
 end
 
+
+# Install pcluster_dcv_connect.sh script in all the OSes to use it for error handling
+cookbook_file "#{node['cfncluster']['scripts_dir']}/pcluster_dcv_connect.sh" do
+  source 'dcv/pcluster_dcv_connect.sh'
+  owner 'root'
+  group 'root'
+  mode '0755'
+end
+
+
 if node['platform'] == 'centos' && node['platform_version'].to_i == 7
   case node['cfncluster']['cfn_node_type']
   when 'MasterServer', nil
     dcv_tarball = "#{node['cfncluster']['sources_dir']}/dcv-#{node['cfncluster']['dcv']['version']}.tgz"
 
     # Install the desktop environment and the desktop manager packages
-    execute 'gnomeDesktop' do
+    execute 'Install gnome desktop' do
       command 'yum -y install @gnome'
     end
 

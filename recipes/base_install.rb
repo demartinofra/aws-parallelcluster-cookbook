@@ -177,14 +177,7 @@ include_recipe "aws-parallelcluster::_nvidia_install"
 # Install FSx options
 include_recipe "aws-parallelcluster::_lustre_install"
 
-# Install DCV recipe
-# We add here the script so that in all machines it can do error handling
-cookbook_file "#{node['cfncluster']['scripts_dir']}/pcluster_dcv_connect.sh" do
-  source 'dcv/pcluster_dcv_connect.sh'
-  owner 'root'
-  group 'root'
-  mode '0755'
-end
+# Install DCV
 include_recipe "aws-parallelcluster::dcv_install"
 
 # Install EFA & Intel MPI
