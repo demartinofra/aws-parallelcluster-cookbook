@@ -66,11 +66,11 @@ default['cfncluster']['nvidia']['cuda_url'] = 'https://developer.download.nvidia
 default['cfncluster']['efa']['installer_url'] = 'https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-1.6.2.tar.gz'
 # ENV2 - tool to capture environment and create modulefiles
 default['cfncluster']['env2']['url'] = 'https://sourceforge.net/projects/env2/files/env2/download'
-# DCV
+# NICE DCV
 default['cfncluster']['dcv']['installed'] = 'yes'
-default['cfncluster']['dcv']['version'] = '2019.1-7423'
+default['cfncluster']['dcv']['version'] = '2019.1-7644'
 default['cfncluster']['dcv']['url'] = "https://d1uj6qtbmh3dt5.cloudfront.net/2019.1/Servers/nice-dcv-#{node['cfncluster']['dcv']['version']}-el7.tgz"
-default['cfncluster']['dcv']['server'] = "nice-dcv-server-2019.1.7423-1.el7.x86_64.rpm"  # NICE DCV server package
+default['cfncluster']['dcv']['server'] = "nice-dcv-server-2019.1.7644-1.el7.x86_64.rpm"  # NICE DCV server package
 default['cfncluster']['dcv']['xdcv'] = "nice-xdcv-2019.1.226-1.el7.x86_64.rpm"  # required to create virtual sessions
 default['cfncluster']['dcv']['gl'] = "nice-dcv-gl-2019.1.544-1.el7.x86_64.rpm"  # required to enable GPU sharing
 # DCV external authenticator configuration
