@@ -40,6 +40,23 @@ def install_ext_auth_virtual_env
 end
 
 
+# Function to disable lock screen since default EC2 users don't have a password
+def disable_lock_screen
+  # Override default GSettings to disable lock screen for all the users
+  cookbook_file "/usr/share/glib-2.0/schemas/10_org.gnome.desktop.screensaver.gschema.override" do
+    source 'dcv/10_org.gnome.desktop.screensaver.gschema.override'
+    owner 'root'
+    group 'root'
+    mode '0755'
+  end
+
+  # compile gsettings schemas
+  execute 'Compile gsettings schema' do
+    command "glib-compile-schemas /usr/share/glib-2.0/schemas/"
+  end
+end
+
+
 # Install pcluster_dcv_connect.sh script in all the OSes to use it for error handling
 cookbook_file "#{node['cfncluster']['scripts_dir']}/pcluster_dcv_connect.sh" do
   source 'dcv/pcluster_dcv_connect.sh'
@@ -58,6 +75,7 @@ if node['platform'] == 'centos' && node['platform_version'].to_i == 7
     execute 'Install gnome desktop' do
       command 'yum -y install @gnome'
     end
+    disable_lock_screen
 
     # Install X Window System (required when using GPU acceleration)
     package "xorg-x11-server-Xorg"
