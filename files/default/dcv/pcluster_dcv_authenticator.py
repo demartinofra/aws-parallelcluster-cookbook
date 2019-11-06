@@ -9,7 +9,6 @@
 # or in the "LICENSE.txt" file accompanying this file.
 # This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
-import argparse
 import errno
 import hashlib
 import json
@@ -25,10 +24,11 @@ from collections import OrderedDict, namedtuple
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from logging.handlers import RotatingFileHandler
+from pwd import getpwuid
 from socketserver import ThreadingMixIn
 from urllib.parse import parse_qsl, urlparse
 
-from pwd import getpwuid
+import argparse
 
 AUTHORIZATION_FILE_DIR = "/var/spool/parallelcluster/pcluster_dcv_authenticator"
 LOG_FILE_PATH = "/var/log/parallelcluster/pcluster_dcv_authenticator.log"
@@ -417,9 +417,7 @@ def _parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Execute the ParallelCluster DCV External Authenticator")
     parser.add_argument("--port", help="The port in which you want to start the HTTP server", type=int)
-    parser.add_argument(
-        "--certificate", help="The certificate to use to run in HTTPS. It must be a .pem file"
-    )
+    parser.add_argument("--certificate", help="The certificate to use to run in HTTPS. It must be a .pem file")
     parser.add_argument("--key", help="The private key of the certificate")
     return parser.parse_args()
 
@@ -457,23 +455,23 @@ def _config_logger():
 
     :return: the logger
     """
-    try:
-        logfile = os.path.expanduser(LOG_FILE_PATH)
-        logdir = os.path.dirname(logfile)
-        os.makedirs(logdir)
-    except OSError as e:
-        if e.errno == errno.EEXIST and os.path.isdir(logdir):
-            pass
-        else:
-            fail("Cannot create log file (%s). Failed with exception: %s" % (logfile, e))
+    # try:
+    #     logfile = os.path.expanduser(LOG_FILE_PATH)
+    #     logdir = os.path.dirname(logfile)
+    #     # os.makedirs(logdir)
+    # except OSError as e:
+    #     if e.errno == errno.EEXIST and os.path.isdir(logdir):
+    #         pass
+    #     else:
+    #         fail("Cannot create log file (%s). Failed with exception: %s" % (logfile, e))
 
     formatter = logging.Formatter("%(asctime)s %(levelname)s [%(module)s:%(funcName)s] %(message)s")
 
-    logfile_handler = RotatingFileHandler(logfile, maxBytes=5 * 1024 * 1024, backupCount=1)
-    logfile_handler.setFormatter(formatter)
+    # logfile_handler = RotatingFileHandler(logfile, maxBytes=5 * 1024 * 1024, backupCount=1)
+    # logfile_handler.setFormatter(formatter)
 
     logger = logging.getLogger("pcluster_dcv_authenticator")
-    logger.addHandler(logfile_handler)
+    # logger.addHandler(logfile_handler)
 
     logger.setLevel("INFO")
     return logger

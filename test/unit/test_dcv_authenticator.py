@@ -10,15 +10,18 @@
 # This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 import json
-
-import pytest
 import string
 import time
-from assertpy import assert_that
 from datetime import datetime
 
+import pytest
+
+from assertpy import assert_that
 from pcluster_dcv_authenticator import (
-    DCVAuthenticator, OneTimeTokenHandler, generate_random_token, generate_sha512_hash
+    DCVAuthenticator,
+    OneTimeTokenHandler,
+    generate_random_token,
+    generate_sha512_hash,
 )
 
 AUTH_MODULE_MOCK_PATH = "pcluster_dcv_authenticator."
@@ -97,9 +100,9 @@ def test_is_process_valid(user, command, session_id, result):
         "--session-id {SESSION}".format(USER=user, COMMAND=command, SESSION=session_id)
     )
 
-    assert_that(
-        DCVAuthenticator.is_process_valid(ps_aux_output, expected_user, expected_session_id)
-    ).is_equal_to(result)
+    assert_that(DCVAuthenticator.is_process_valid(ps_aux_output, expected_user, expected_session_id)).is_equal_to(
+        result
+    )
 
 
 def mock_generate_random_token(mocker, value):
@@ -162,9 +165,7 @@ def test_get_request_token(mocker):
     assert_that(DCVAuthenticator._get_request_token(user, session_id)).is_equal_to(
         json.dumps({"requestToken": token_value, "accessFile": generate_sha512_hash(token_value)})
     )
-    assert_that(DCVAuthenticator.request_token_manager.get_token_info(token_value)[:-2]).is_equal_to(
-        (user, session_id)
-    )
+    assert_that(DCVAuthenticator.request_token_manager.get_token_info(token_value)[:-2]).is_equal_to((user, session_id))
 
     # session does not exists
     mock_verify_session_existence(mocker, exists=False)
