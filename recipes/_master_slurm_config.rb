@@ -98,3 +98,23 @@ else
     action %i[enable start]
   end
 end
+
+slurm_python_version = "3.7.6"
+install_pyenv slurm_python_version
+activate_virtual_env 'slurm' do
+  pyenv_path "#{node['cfncluster']['system_pyenv_root']}/versions/#{slurm_python_version}/envs/slurm"
+  python_version slurm_python_version
+  requirements_path "requirements.txt"
+end
+
+file '/home/slurm/slurm_resume.log' do
+  mode '0755'
+  owner 'slurm'
+  group 'slurm'
+end
+
+file '/home/slurm/slurm_suspend.log' do
+  mode '0755'
+  owner 'slurm'
+  group 'slurm'
+end

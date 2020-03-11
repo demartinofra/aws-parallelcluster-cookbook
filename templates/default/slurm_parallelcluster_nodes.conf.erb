@@ -1,8 +1,3 @@
-<%
-  def append_dummy
-    if node['cfncluster']['cfn_max_queue_size'].to_i > 0
-        "dummy-compute[1-" + node['cfncluster']['cfn_max_queue_size'] + "]"
-    end
-  end
-%>
-NodeName=<%= append_dummy %> CPUs=2048 State=FUTURE
+SuspendExcNodes=static-capacity-compute[1-1]
+NodeName=cloud-bursting-compute[1-2] CPUs=4 State=CLOUD Feature=c5.xlarge
+NodeName=static-capacity-compute[1-1] CPUs=4 State=FUTURE Feature=c5.xlarge

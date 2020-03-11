@@ -35,7 +35,7 @@ CacheGroups=0
 # being non-responsive. If the node was set DOWN for any other reason (low memory, unexpected reboot, etc.), its state
 # will not automatically be changed. A node registers with a valid configuration if its memory, GRES, CPU count, etc.
 # are equal to or greater than the values configured in slurm.conf.
-ReturnToService=1
+ReturnToService=2
 #MaxJobCount=
 #PlugStackConfig=
 #PropagatePrioProcess=
@@ -83,9 +83,9 @@ SelectType=select/cons_tres
 SelectTypeParameters=CR_CPU
 #
 # LOGGING
-SlurmctldDebug=3
+SlurmctldDebug=debug5
 SlurmctldLogFile=/var/log/slurmctld.log
-SlurmdDebug=3
+SlurmdDebug=debug5
 SlurmdLogFile=/var/log/slurmd.log
 JobCompType=jobcomp/none
 #JobCompLoc=
@@ -107,3 +107,16 @@ JobCompType=jobcomp/none
 #PARTITION:compute
 include slurm_parallelcluster_nodes.conf
 PartitionName=compute Nodes=ALL Default=YES MaxTime=INFINITE State=UP
+
+### CLOUD
+SuspendProgram=/home/slurm/slurm_suspend
+ResumeProgram=/home/slurm/slurm_resume
+ResumeFailProgram=/home/slurm/slurm_suspend
+SuspendTimeout=600
+ResumeTimeout=600
+SuspendTime=60
+TreeWidth=128
+PrivateData=cloud
+SlurmctldParameters=cloud_dns,idle_on_node_suspend
+CommunicationParameters=NoAddrCache
+DebugFlags=power
