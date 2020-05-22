@@ -73,9 +73,19 @@ end
 
 # TO-DO: verify directories and input file path
 # Generate pcluster specific configs
-execute "generate_pcluster_slurm_configs" do
-  command "/usr/local/pyenv/versions/cookbook_virtualenv/bin/python #{node['cfncluster']['scripts_dir']}/generate_slurm_config.py --output-directory /opt/slurm/etc/ --template-directory #{node['cfncluster']['scripts_dir']}/slurm/templates/ --input-file #{node['cfncluster']['slurm']['queue_config_path']}"
+bash 'generate slurm config' do
+  user 'root'
+  group 'root'
+  code <<-SLURM
+      set -e
+      /usr/local/pyenv/versions/cookbook_virtualenv/bin/pip install jinja2
+      /usr/local/pyenv/versions/cookbook_virtualenv/bin/python #{node['cfncluster']['scripts_dir']}/generate_slurm_config.py --output-directory /opt/slurm/etc/ --template-directory #{node['cfncluster']['scripts_dir']}/slurm/templates/ --input-file #{node['cfncluster']['slurm']['queue_config_path']}
+  SLURM
 end
+
+# execute "generate_pcluster_slurm_configs" do
+#   command "/usr/local/pyenv/versions/cookbook_virtualenv/bin/python #{node['cfncluster']['scripts_dir']}/generate_slurm_config.py --output-directory /opt/slurm/etc/ --template-directory #{node['cfncluster']['scripts_dir']}/slurm/templates/ --input-file #{node['cfncluster']['slurm']['queue_config_path']}"
+# end
 
 # alinux1 and centos6 use an old cgroup directory: /cgroup
 # all other OSs use /sys/fs/cgroup, which is the default
@@ -97,6 +107,20 @@ cookbook_file '/opt/slurm/etc/slurm.csh' do
   source 'slurm.csh'
   owner 'root'
   group 'root'
+  mode '0755'
+end
+
+cookbook_file '/home/slurm/slurm_resume' do
+  source 'slurm/resume_program'
+  owner 'slurm'
+  group 'slurm'
+  mode '0755'
+end
+
+cookbook_file '/home/slurm/slurm_suspend' do
+  source 'slurm/suspend_program'
+  owner 'slurm'
+  group 'slurm'
   mode '0755'
 end
 
