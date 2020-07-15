@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 gem 'berkshelf'
 
 group :style do
-  gem 'foodcritic', '~> 6.0.1'
+  gem 'foodcritic', '~> 16.3.0'
   gem 'rake', '~> 11.1.1'
   gem 'rubocop', '~> 0.49'
 end
