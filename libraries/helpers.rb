@@ -154,36 +154,23 @@ def ami_bootstrapped?
   'aws-parallelcluster-' + node['cfncluster']['cfncluster-version'] == version && node['cfncluster']['skip_install_recipes'] == 'yes'
 end
 
-def master_address(region, stack_name)
+def compute_node_info
   require 'chef/mixin/shell_out'
 
-  output = shell_out!("aws ec2 describe-instances --filters '[{\"Name\":\"tag:Application\", \"Values\": " \
-                      "[\"#{stack_name}\"]},{\"Name\":\"tag:aws-parallelcluster-node-type\", \"Values\": [\"Master\"]},{\"Name\": " \
-                      "\"instance-state-name\", \"Values\": [\"running\"]}]' --region #{region} --query " \
-                      "\"Reservations[0].Instances[0].[PrivateIpAddress,PrivateDnsName]\" --output text").stdout.strip
-
-  raise "Failed when retrieving Master server address: unable to describe EC2 instance" if output == "None"
-
-  master_private_ip, master_private_dns = output.split(/\s+/)
-  Chef::Log.info("Retrieved master private ip: #{master_private_ip}")
-  Chef::Log.info("Retrieved master private dns: #{master_private_dns}")
-
-  [master_private_ip, master_private_dns]
-end
-
-def compute_hostname
-  require 'chef/mixin/shell_out'
-
-  assigned_hostname = shell_out!("#{node['cfncluster']['cookbook_virtualenv_path']}/bin/aws dynamodb " \
+  output = shell_out!("#{node['cfncluster']['cookbook_virtualenv_path']}/bin/aws dynamodb " \
     "--region #{node['cfncluster']['cfn_region']} query --table-name #{node['cfncluster']['cfn_ddb_table']} " \
     "--index-name InstanceId --key-condition-expression 'InstanceId = :instanceid' " \
     "--expression-attribute-values '{\":instanceid\": {\"S\":\"#{node['ec2']['instance_id']}\"}}' " \
-    "--output text --query 'Items[0].Id.S'", user: 'root').stdout.strip
+    "--output text --query 'Items[0].Id.S,Items[0].MasterPrivateIp.S,Items[0].MasterHostname.S'", user: 'root').stdout.strip
 
-  raise "Failed when retrieving Compute hostname from DynamoDB" if assigned_hostname == "None"
+  raise "Failed when retrieving Compute info from DynamoDB" if output == "None"
+  slurm_nodename, master_private_ip, master_private_dns = output.split(/\s+/)
 
-  Chef::Log.info("Assigned_hostname is: #{assigned_hostname}")
-  assigned_hostname
+  Chef::Log.info("Retrieved Slurm nodename is: #{slurm_nodename}")
+  Chef::Log.info("Retrieved master private ip: #{master_private_ip}")
+  Chef::Log.info("Retrieved master private dns: #{master_private_dns}")
+
+  [slurm_nodename, master_private_ip, master_private_dns]
 end
 
 # Utility method to restart network service according to the OS.

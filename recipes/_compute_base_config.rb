@@ -16,7 +16,7 @@
 # limitations under the License.
 
 # Retrieve master node ip if not set already
-unless node['cfncluster']['cfn_master'] && node['cfncluster']['cfn_master_private_ip']
+if node['cfncluster']['cfn_scheduler'] == 'slurm'
   ruby_block "retrieve master ip" do
     block do
       master_private_ip, master_private_dns = master_address(node['cfncluster']['cfn_region'], node['cfncluster']['stack_name'])
