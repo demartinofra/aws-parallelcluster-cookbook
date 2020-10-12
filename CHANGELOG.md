@@ -3,6 +3,14 @@ aws-parallelcluster-cookbook CHANGELOG
 
 This file is used to list changes made in each version of the AWS ParallelCluster cookbook.
 
+2.10.1
+------
+
+**CHANGES**
+
+- Do not force compute fleet into STOPPED state when performing a cluster update. This allows to update the queue
+  size without forcing a termination of the existing instances.
+
 2.9.1
 -----
 
