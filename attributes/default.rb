@@ -138,8 +138,8 @@ default['cfncluster']['nvidia']['fabricmanager']['repository_uri'] = value_for_p
 )
 
 # EFA
-default['cfncluster']['efa']['installer_version'] = '1.11.0'
-default['cfncluster']['efa']['installer_url'] = "https://efa-installer.amazonaws.com/aws-efa-installer-#{node['cfncluster']['efa']['installer_version']}.tar.gz"
+default['cfncluster']['efa']['installer_version'] = '1.11.1-alpha4'
+default['cfncluster']['efa']['installer_url'] = "https://aws-efa-installer-dev.s3-us-west-2.amazonaws.com/aws-efa-installer-1.11.1-alpha4.tar.gz"
 default['cfncluster']['enable_efa_gdr'] = "no"
 
 # NICE DCV
