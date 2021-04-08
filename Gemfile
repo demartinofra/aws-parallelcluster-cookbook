@@ -10,7 +10,7 @@ end
 
 group :test do
   gem 'chefspec', '~> 4.0'
-  gem 'kitchen-vagrant', '~> 1.1.0'
+  gem 'kitchen-vagrant', '~> 1.8.0'
   gem 'test-kitchen', '~> 1.13.2'
 end
 
