@@ -1,0 +1,15 @@
+version: 2
+updates:
+- package-ecosystem: bundler
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: rubocop
+    versions:
+    - 1.12.1
+    - 1.7.0
+  - dependency-name: kitchen-vagrant
+    versions:
+    - 1.7.2
