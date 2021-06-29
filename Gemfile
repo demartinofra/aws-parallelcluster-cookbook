@@ -5,7 +5,7 @@ gem 'berkshelf'
 group :style do
   gem 'foodcritic', '~> 6.0.1'
   gem 'rake', '~> 11.1.1'
-  gem 'rubocop', '~> 0.49'
+  gem 'rubocop', '~> 1.18'
 end
 
 group :test do
